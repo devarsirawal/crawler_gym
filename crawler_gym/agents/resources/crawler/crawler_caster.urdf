@@ -7,6 +7,10 @@
   <!-- Base Footprint -->
   <link name="base_footprint">
     <origin rpy="0 0 0" xyz="0 0 0"/>
+    <inertial>
+      <mass value="1e-10"/>
+      <inertia ixx="1e-10" ixy="1e-10" ixz="1e-10" iyy="1e-10" iyz="1e-10" izz="1e-10"/>
+    </inertial>
   </link>
   <!--Base link for the main body-->
   <link name="base_link">

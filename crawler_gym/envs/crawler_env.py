@@ -3,9 +3,7 @@ import gym
 from crawler_gym.agents.crawler import Crawler
 from crawler_gym.agents.wall import Wall
 
-import os
 import pybullet as p
-import pybullet_data
 import math
 import numpy as np
 import random
@@ -20,15 +18,15 @@ class CrawlerEnv(gym.Env):
 
         # actions for left & right front wheel velocities, 
         # need to change to linear and angular velocities
-        self.action_space = gym.spaces.box.Box(low=np.array([-1,-1]),high=np.array([1,1]))
-        self.observation_space = gym.spaces.box.Box(low=np.array([-100]*17),high=np.array([100]*17))
+        self.action_space = gym.spaces.Box(low=np.array([-1,-1]),high=np.array([1,1]))
+        self.observation_space = gym.spaces.Box(low=np.array([-100]*17),high=np.array([100]*17))
 
         self.np_random, _ = gym.utils.seeding.np_random()
 
         self.client = p.connect(p.GUI)
 
         self.crawler = None
-        self.commands = np.zeros((1,2), dtype=float)
+        self.commands = np.zeros((2,), dtype=float)
         
         self.init_done = True
         self.done = False
@@ -37,7 +35,7 @@ class CrawlerEnv(gym.Env):
 
     def step(self, action):
         self.actions = action
-        self.crawler.apply_action(action)
+        self.crawler.apply_action(self.actions)
         p.stepSimulation()
 
         self._resample_commands()
@@ -58,29 +56,38 @@ class CrawlerEnv(gym.Env):
     def compute_observations(self):
         obs = self.crawler.get_observations()
         obs += self.actions.tolist()
-        obs += self.commands
+        obs += self.commands.tolist()
+        obs = np.array(obs)
+        return obs 
 
     def compute_reward(self):
         reward = 0
         reward += self._reward_tracking_lin_vel()
-        reward += self._reward_tracking_ang_vel()
+        # reward += self._reward_tracking_ang_vel()
         return reward
 
     def _resample_commands(self):
-        self.commands[0] = random.uniform(0,1)
+        # self.commands[0] = random.uniform(0,1)
+        self.commands[0] = 1
 
     def seed(self, seed=None):
         self.np_random, seed = gym.utils.seeding.np_random(seed)
     
 
     def reset(self):
+        self.step_counter = 0
         p.resetSimulation(self.client)
         p.setGravity(0,0,-9.81)
-        self.commands = [0, 0]
+        self.actions = np.array([0,0])
+        self.commands = np.zeros((2,), dtype=float)
+
 
         Wall(self.client)
         self.crawler = Crawler(self.client)
 
+        obs = self.compute_observations() 
+
+        return obs
 
     
     def render(self, mode="human"):

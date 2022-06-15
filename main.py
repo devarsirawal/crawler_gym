@@ -11,6 +11,8 @@ episodes = 10
 
 model = PPO('MlpPolicy', env, verbose=1)
 model.learn(total_timesteps=25000)
+model.save("crawler_ppo")
+model.load("crawler_ppo")
 
 for ep in range(episodes):
     obs = env.reset()
