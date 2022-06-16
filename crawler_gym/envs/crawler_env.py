@@ -38,7 +38,8 @@ class CrawlerEnv(gym.Env):
         self.crawler.apply_action(self.actions)
         p.stepSimulation()
 
-        self._resample_commands()
+        if self.step_counter % 250 == 0:
+            self._resample_commands()
 
         reward = self.compute_reward()
 
@@ -50,7 +51,6 @@ class CrawlerEnv(gym.Env):
             self.done = True
 
         info = {}
-
         return obs, reward, self.done, info 
 
     def compute_observations(self):
@@ -86,6 +86,8 @@ class CrawlerEnv(gym.Env):
         self.crawler = Crawler(self.client)
 
         obs = self.compute_observations() 
+
+        self.done = False
 
         return obs
 

@@ -29,7 +29,7 @@ class Crawler:
 
     def get_observations(self):
         obs = self.get_state() 
-        print("X VEL: ", obs[7]) 
+        # print("X VEL: ", obs[7]) 
         return obs
     
     def get_state(self):
