@@ -41,6 +41,8 @@ class CrawlerEnv(gym.Env):
         if self.step_counter % 250 == 0:
             self._resample_commands()
 
+        self.physics_step()
+
         reward = self.compute_reward()
 
         obs = self.compute_observations()
@@ -52,6 +54,14 @@ class CrawlerEnv(gym.Env):
 
         info = {}
         return obs, reward, self.done, info 
+
+    def physics_step(self):
+        p.applyExternalForce(objectUniqueId=self.crawler.crawler, linkIndex=-1,
+                         forceObj=[0,0,-200], posObj=self.crawler.lw_pos, flags=p.LINK_FRAME, physicsClientId=self.client)
+        p.applyExternalForce(objectUniqueId=self.crawler.crawler, linkIndex=-1,
+                         forceObj=[0,0,-200], posObj=self.crawler.rw_pos, flags=p.LINK_FRAME, physicsClientId=self.client)
+        p.applyExternalForce(objectUniqueId=self.crawler.crawler, linkIndex=-1,
+                         forceObj=[0,0,-200], posObj=self.crawler.cw_pos, flags=p.LINK_FRAME, physicsClientId=self.client)
 
     def compute_observations(self):
         obs = self.crawler.get_observations()
@@ -121,7 +131,7 @@ class CrawlerEnv(gym.Env):
     
 
     def _reward_tracking_lin_vel(self):
-        lin_vel_error = np.square(self.commands[0] - self.crawler.get_state()[7])
+        lin_vel_error = np.square(self.commands[0] - self.crawler.get_state()[9])
         return np.exp(-lin_vel_error/TRACKING_SIGMA)
 
     def _reward_tracking_ang_vel(self):

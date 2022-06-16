@@ -5,10 +5,10 @@ import math
 
 class Crawler:
     def __init__(self, client):
-        # start_pos = [0.01,0,0]
-        # start_orient = p.getQuaternionFromEuler([0,-pi/2.,pi])
-        start_pos = [0,0,0.01]
-        start_orient = p.getQuaternionFromEuler([0,0,0])
+        start_pos = [0.01,0,0]
+        start_orient = p.getQuaternionFromEuler([0,-pi/2.,pi])
+        # start_pos = [0,0,0.01]
+        # start_orient = p.getQuaternionFromEuler([0,0,0])
         
         f_name = os.path.join(os.path.dirname(__file__), "resources/crawler/crawler_caster.urdf")
         self.crawler = p.loadURDF(f_name, 
@@ -16,6 +16,9 @@ class Crawler:
                                   start_orient,
                                   physicsClientId=client)
         self.action_scale = 10
+        self.lw_pos = p.getJointInfo(self.crawler, 1)[14]
+        self.rw_pos = p.getJointInfo(self.crawler, 2)[14]
+        self.cw_pos = p.getJointInfo(self.crawler, 4)[14]
         p.setJointMotorControl2(self.crawler, 1, p.VELOCITY_CONTROL, targetVelocity=0, force=0, physicsClientId=client)
         p.setJointMotorControl2(self.crawler, 2, p.VELOCITY_CONTROL, targetVelocity=0, force=0, physicsClientId=client)
         p.setJointMotorControl2(self.crawler, 3, p.POSITION_CONTROL, targetPosition=0, force=0, physicsClientId=client)
