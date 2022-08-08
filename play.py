@@ -4,11 +4,16 @@ import numpy as np
 import pybullet as p
 from stable_baselines3 import PPO
 from plotter import Plotter
-
+import argparse
 
 MAX_PLOT_TIME = 1000
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--headless", help="Run in headless mode", action="store_true", default=False)
+args = parser.parse_args()
+
 # Create the environment
-env = gym.make('Crawler-v0')
+env = gym.make('Crawler-v0', headless=args.headless)
 env.reset()
 episodes = 1
 model = PPO.load("crawler_ppo", env=env)
