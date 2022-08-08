@@ -13,7 +13,7 @@ TRACKING_SIGMA = 0.25
 class CrawlerEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self):
+    def __init__(self, headless=False):
         self.step_counter = 0
 
         # actions for left & right front wheel velocities, 
@@ -23,7 +23,7 @@ class CrawlerEnv(gym.Env):
 
         self.np_random, _ = gym.utils.seeding.np_random()
 
-        self.client = p.connect(p.GUI)
+        self.client = p.connect(p.DIRECT if headless else p.GUI)
 
         self.crawler = None
         self.commands = np.zeros((2,), dtype=float)
@@ -73,12 +73,13 @@ class CrawlerEnv(gym.Env):
     def compute_reward(self):
         reward = 0
         reward += self._reward_tracking_lin_vel()
-        # reward += self._reward_tracking_ang_vel()
+        reward += self._reward_tracking_ang_vel()
         return reward
 
     def _resample_commands(self):
         # self.commands[0] = random.uniform(0,1)
         self.commands[0] = 1
+        self.commands[1] = math.pi/8
 
     def seed(self, seed=None):
         self.np_random, seed = gym.utils.seeding.np_random(seed)
@@ -135,6 +136,6 @@ class CrawlerEnv(gym.Env):
         return np.exp(-lin_vel_error/TRACKING_SIGMA)
 
     def _reward_tracking_ang_vel(self):
-        ang_vel_error = np.square(self.commands[1] - self.crawler.get_state()[12])
+        ang_vel_error = np.square(self.commands[1] - self.crawler.get_state()[10])
         return np.exp(-ang_vel_error/TRACKING_SIGMA)
     
