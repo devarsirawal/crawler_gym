@@ -8,7 +8,7 @@ import math
 import numpy as np
 import random
 
-MAX_EPISODE_LEN = 20*100
+MAX_EPISODE_LEN = 1e5
 TRACKING_SIGMA = 0.25
 class CrawlerEnv(gym.Env):
     metadata = {'render.modes': ['human']}
