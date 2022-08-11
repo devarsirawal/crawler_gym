@@ -8,7 +8,7 @@ import math
 import numpy as np
 import random
 
-MAX_EPISODE_LEN = 1e5
+MAX_EPISODE_LEN = 1e3
 TRACKING_SIGMA = 0.25
 class CrawlerEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -19,10 +19,10 @@ class CrawlerEnv(gym.Env):
         # actions for left & right front wheel velocities, 
         # need to change to linear and angular velocities
         self.action_space = gym.spaces.Box(low=np.array([-1,-1]),high=np.array([1,1]))
-        self.observation_space = gym.spaces.Box(low=np.array([-100]*17),high=np.array([100]*17))
+        self.observation_space = gym.spaces.Box(low=np.array([-100]*10),high=np.array([100]*10))
 
         self.np_random, _ = gym.utils.seeding.np_random()
-
+        self.dt = 1./20.
         self.client = p.connect(p.DIRECT if headless else p.GUI)
 
         self.crawler = None
@@ -64,7 +64,7 @@ class CrawlerEnv(gym.Env):
                          forceObj=[0,0,-200], posObj=self.crawler.cw_pos, flags=p.LINK_FRAME, physicsClientId=self.client)
 
     def compute_observations(self):
-        obs = self.crawler.get_observations()
+        obs = self.crawler.get_observations()[7:]
         obs += self.actions.tolist()
         obs += self.commands.tolist()
         obs = np.array(obs)
@@ -78,8 +78,8 @@ class CrawlerEnv(gym.Env):
 
     def _resample_commands(self):
         # self.commands[0] = random.uniform(0,1)
-        self.commands[0] = 1
-        self.commands[1] = math.pi/8
+        self.commands[0] = 0 
+        self.commands[1] = 1
 
     def seed(self, seed=None):
         self.np_random, seed = gym.utils.seeding.np_random(seed)
@@ -89,6 +89,7 @@ class CrawlerEnv(gym.Env):
         self.step_counter = 0
         p.resetSimulation(self.client)
         p.setGravity(0,0,-9.81)
+        p.setPhysicsEngineParameter(fixedTimeStep=self.dt, numSubSteps=10)
         self.actions = np.array([0,0])
         self.commands = np.zeros((2,), dtype=float)
 
@@ -132,10 +133,10 @@ class CrawlerEnv(gym.Env):
     
 
     def _reward_tracking_lin_vel(self):
-        lin_vel_error = np.square(self.commands[0] - self.crawler.get_state()[9])
+        lin_vel_error = np.square(self.commands[0] - self.crawler.get_state()[7])
         return np.exp(-lin_vel_error/TRACKING_SIGMA)
 
     def _reward_tracking_ang_vel(self):
-        ang_vel_error = np.square(self.commands[1] - self.crawler.get_state()[10])
+        ang_vel_error = np.square(self.commands[1] - self.crawler.get_state()[12])
         return np.exp(-ang_vel_error/TRACKING_SIGMA)
     

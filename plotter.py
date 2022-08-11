@@ -51,24 +51,22 @@ class Plotter:
         if log["track_lin_vel"]: a.plot(time, log["track_lin_vel"], label='measured')
         if log["cmd_lin_vel"]: a.plot(time, log["cmd_lin_vel"], label='target')
         a.set(xlabel='time [frames]', ylabel=' Linear Velocity (m/s)', title='Linear Velocity')
-        a.set_ylim([0, 2])
         a.legend()
         # plot right front wheel velocity
         a = axs[0,2]
         if log["track_ang_vel"]: a.plot(time, log["track_ang_vel"], label='measured')
         if log["cmd_ang_vel"]: a.plot(time, log["cmd_ang_vel"], label='target')
         a.set(xlabel='time [frames]', ylabel=' Angular Velocity [rad/s]', title='Angular Velocity')
-        a.set_ylim([0, 2])
         a.legend()
         # plot left front wheel torque
         a = axs[1,1]
-        if log["track_lin_vel"] and log["cmd_lin_vel"]: a.plot(time, np.sqrt(np.mean((log["track_lin_vel"]-log["cmd_lin_vel"])**2)), label='measured')
-        a.set(xlabel='time [frames]', ylabel='Error', title='Linear Velocity RMSE')
+        if log["track_lin_vel"] and log["cmd_lin_vel"]: a.plot(time, np.sqrt((np.array(log["track_lin_vel"])-np.array(log["cmd_lin_vel"]))**2), label='measured')
+        a.set(xlabel='time [frames]', ylabel='Error', title='Linear Velocity Error')
         a.legend()
         # plot right front wheel torque
         a = axs[1,2]
-        if log["track_ang_vel"] and log["cmd_ang_vel"]: a.plot(time, np.sqrt(np.mean((log["track_ang_vel"]-log["cmd_ang_vel"])**2)), label='measured')
-        a.set(xlabel='time [frames]', ylabel='Error', title='Angular Velocity RMSE')
+        if log["track_ang_vel"] and log["cmd_ang_vel"]: a.plot(time, np.sqrt(np.array((log["track_ang_vel"])-np.array(log["cmd_ang_vel"]))**2), label='measured')
+        a.set(xlabel='time [frames]', ylabel='Error', title='Angular Velocity Error')
         a.legend()
         plt.show()
     

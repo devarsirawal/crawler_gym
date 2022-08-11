@@ -6,7 +6,7 @@ from stable_baselines3 import PPO
 from plotter import Plotter
 import argparse
 
-MAX_PLOT_TIME = 1000
+MAX_PLOT_TIME = 250 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--headless", help="Run in headless mode", action="store_true", default=False)
@@ -32,9 +32,14 @@ for ep in range(episodes):
         print(f"{env.step_counter}: {rewards}")
         if env.step_counter < MAX_PLOT_TIME:
             logger_vars = {
-                'track_lin_vel': env.crawler.get_state()[9],
-                'track_ang_vel': env.crawler.get_state()[10],
-                'cmd_lin_vel': action[0],
-                'cmd_ang_vel': action[1]
+                'x_pos': env.crawler.get_state()[2],
+                'y_pos': env.crawler.get_state()[0],
+                'track_lin_vel': env.crawler.get_state()[7],
+                'track_ang_vel': env.crawler.get_state()[12],
+                'cmd_lin_vel': env.commands[0],
+                'cmd_ang_vel': env.commands[1] 
             }
+            plotter.log_states(logger_vars)
+        elif env.step_counter == MAX_PLOT_TIME:
+            plotter.plot_states()
 env.close()

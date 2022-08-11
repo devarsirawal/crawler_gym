@@ -2,6 +2,7 @@ import pybullet as p
 import os
 from math import pi
 import math
+from crawler_gym.utils import inverse_rotation
 
 class Crawler:
     def __init__(self, client):
@@ -38,4 +39,6 @@ class Crawler:
     def get_state(self):
         pos_orient = p.getBasePositionAndOrientation(self.crawler, physicsClientId=self.client)
         vels = p.getBaseVelocity(self.crawler, physicsClientId=self.client)
-        return list(pos_orient[0]) + list(pos_orient[1])+ list(vels[0]) + list(vels[1]) 
+        roll, pitch, yaw = p.getEulerFromQuaternion(pos_orient[1])
+        local_lin_vel, local_ang_vel = inverse_rotation(vels[0], roll, pitch, yaw), inverse_rotation(vels[1], roll, pitch, yaw)
+        return list(pos_orient[0]) + list(pos_orient[1])+ list(local_lin_vel) + list(local_ang_vel) 
