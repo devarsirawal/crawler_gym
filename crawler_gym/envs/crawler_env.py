@@ -7,6 +7,7 @@ import pybullet as p
 import math
 import numpy as np
 import random
+from csv import writer
 
 MAX_EPISODE_LEN = 1e3
 TRACKING_SIGMA = 0.25
@@ -27,7 +28,7 @@ class CrawlerEnv(gym.Env):
 
         self.crawler = None
         self.commands = np.zeros((2,), dtype=float)
-        
+        self.action_buffer = [] 
         self.init_done = True
         self.done = False
 
@@ -35,6 +36,7 @@ class CrawlerEnv(gym.Env):
 
     def step(self, action):
         self.actions = action
+        self.action_buffer.append(action + [self.crawler.get_observations()[7], self.crawler.get_observations()[12]])
         self.crawler.apply_action(self.actions)
         p.stepSimulation()
 
@@ -50,6 +52,9 @@ class CrawlerEnv(gym.Env):
         self.step_counter += 1 
 
         if self.step_counter > MAX_EPISODE_LEN:
+            with open("actions.csv", "a+", newline="") as f:
+                wo = writer(f)
+                wo.writerows(self.action_buffer)
             self.done = True
 
         info = {}
@@ -77,9 +82,9 @@ class CrawlerEnv(gym.Env):
         return reward
 
     def _resample_commands(self):
-        # self.commands[0] = random.uniform(0,1)
-        self.commands[0] = 0 
-        self.commands[1] = 1
+        # self.commands[0] = random.uniform(-0.25, 0.25)
+        self.commands[0] = 0.05 
+        self.commands[1] = 0 
 
     def seed(self, seed=None):
         self.np_random, seed = gym.utils.seeding.np_random(seed)
@@ -89,7 +94,7 @@ class CrawlerEnv(gym.Env):
         self.step_counter = 0
         p.resetSimulation(self.client)
         p.setGravity(0,0,-9.81)
-        p.setPhysicsEngineParameter(fixedTimeStep=self.dt, numSubSteps=10)
+        p.setPhysicsEngineParameter(fixedTimeStep=self.dt, numSubSteps=50)
         self.actions = np.array([0,0])
         self.commands = np.zeros((2,), dtype=float)
 
