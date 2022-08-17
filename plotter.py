@@ -58,6 +58,11 @@ class Plotter:
         if log["cmd_ang_vel"]: a.plot(time, log["cmd_ang_vel"], label='target')
         a.set(xlabel='time [frames]', ylabel=' Angular Velocity [rad/s]', title='Angular Velocity')
         a.legend()
+        a = axs[1,0]
+        if log["l_wheel"]: a.plot(time, log["l_wheel"], label="l_wheel")
+        if log["r_wheel"]: a.plot(time, log["r_wheel"], label="r_wheel")
+        a.set(xlabel='time [frames]', ylabel=' Angular Velocity [rad/s]', title='Wheel Angular Velocity')
+        a.legend()
         # plot left front wheel torque
         a = axs[1,1]
         if log["track_lin_vel"] and log["cmd_lin_vel"]: a.plot(time, np.sqrt((np.array(log["track_lin_vel"])-np.array(log["cmd_lin_vel"]))**2), label='measured')

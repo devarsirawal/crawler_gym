@@ -16,7 +16,7 @@ class Crawler:
                                   start_pos,
                                   start_orient,
                                   physicsClientId=client)
-        self.action_scale = 10
+        self.action_scale = 10 
         self.lw_pos = p.getJointInfo(self.crawler, 1)[14]
         self.rw_pos = p.getJointInfo(self.crawler, 2)[14]
         self.cw_pos = p.getJointInfo(self.crawler, 4)[14]

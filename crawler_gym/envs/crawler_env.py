@@ -20,7 +20,7 @@ class CrawlerEnv(gym.Env):
         # actions for left & right front wheel velocities, 
         # need to change to linear and angular velocities
         self.action_space = gym.spaces.Box(low=np.array([-1,-1]),high=np.array([1,1]))
-        self.observation_space = gym.spaces.Box(low=np.array([-100]*10),high=np.array([100]*10))
+        self.observation_space = gym.spaces.Box(low=np.array([-100]*4),high=np.array([100]*4))
 
         self.np_random, _ = gym.utils.seeding.np_random()
         self.dt = 1./20.
@@ -36,7 +36,7 @@ class CrawlerEnv(gym.Env):
 
     def step(self, action):
         self.actions = action
-        self.action_buffer.append(action + [self.crawler.get_observations()[7], self.crawler.get_observations()[12]])
+        self.action_buffer.append(list(action) + [self.crawler.get_observations()[7], self.crawler.get_observations()[12]])
         self.crawler.apply_action(self.actions)
         p.stepSimulation()
 
@@ -51,10 +51,9 @@ class CrawlerEnv(gym.Env):
 
         self.step_counter += 1 
 
+        self.prev_actions = self.actions
+
         if self.step_counter > MAX_EPISODE_LEN:
-            with open("actions.csv", "a+", newline="") as f:
-                wo = writer(f)
-                wo.writerows(self.action_buffer)
             self.done = True
 
         info = {}
@@ -69,8 +68,9 @@ class CrawlerEnv(gym.Env):
                          forceObj=[0,0,-200], posObj=self.crawler.cw_pos, flags=p.LINK_FRAME, physicsClientId=self.client)
 
     def compute_observations(self):
-        obs = self.crawler.get_observations()[7:]
-        obs += self.actions.tolist()
+        obs = [] #self.crawler.get_observations()[7:]
+        obs += [self.crawler.get_observations()[7], self.crawler.get_observations()[12]]
+        # obs += self.actions.tolist()
         obs += self.commands.tolist()
         obs = np.array(obs)
         return obs 
@@ -78,13 +78,14 @@ class CrawlerEnv(gym.Env):
     def compute_reward(self):
         reward = 0
         reward += self._reward_tracking_lin_vel()
-        reward += self._reward_tracking_ang_vel()
+        # reward += self._reward_tracking_ang_vel()
+        # reward += -0.1 * self._reward_action_rate()
         return reward
 
     def _resample_commands(self):
-        # self.commands[0] = random.uniform(-0.25, 0.25)
-        self.commands[0] = 0.05 
-        self.commands[1] = 0 
+         self.commands[0] = random.uniform(-0.25, 0.25)
+         # self.commands[0] = 0.10 
+         self.commands[1] = 0 
 
     def seed(self, seed=None):
         self.np_random, seed = gym.utils.seeding.np_random(seed)
@@ -96,6 +97,7 @@ class CrawlerEnv(gym.Env):
         p.setGravity(0,0,-9.81)
         p.setPhysicsEngineParameter(fixedTimeStep=self.dt, numSubSteps=50)
         self.actions = np.array([0,0])
+        self.prev_actions = self.actions
         self.commands = np.zeros((2,), dtype=float)
 
 
@@ -138,10 +140,14 @@ class CrawlerEnv(gym.Env):
     
 
     def _reward_tracking_lin_vel(self):
-        lin_vel_error = np.square(self.commands[0] - self.crawler.get_state()[7])
-        return np.exp(-lin_vel_error/TRACKING_SIGMA)
+        # lin_vel_error = np.square(self.commands[0] - self.crawler.get_state()[7])
+        # return np.exp(-lin_vel_error/TRACKING_SIGMA)
+        return 1 - math.fabs(self.commands[0] - self.crawler.get_state()[7]/(self.commands[0] if self.commands[0] else 1))
 
     def _reward_tracking_ang_vel(self):
-        ang_vel_error = np.square(self.commands[1] - self.crawler.get_state()[12])
-        return np.exp(-ang_vel_error/TRACKING_SIGMA)
-    
+        # ang_vel_error = np.square(self.commands[1] - self.crawler.get_state()[12])
+        # return np.exp(-ang_vel_error/TRACKING_SIGMA)
+        return 1 - math.fabs(self.commands[1] - self.crawler.get_state()[12]/(self.commands[1] if self.commands[1] else 1))
+
+    def _reward_action_rate(self):
+        return np.sum(np.square(self.prev_actions - self.actions))
