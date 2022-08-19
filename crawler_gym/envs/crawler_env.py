@@ -78,14 +78,15 @@ class CrawlerEnv(gym.Env):
     def compute_reward(self):
         reward = 0
         reward += self._reward_tracking_lin_vel()
-        # reward += self._reward_tracking_ang_vel()
-        # reward += -0.1 * self._reward_action_rate()
+        reward += self._reward_tracking_ang_vel()
+        reward += -1.0 * self._reward_action_rate()
         return reward
 
     def _resample_commands(self):
-         self.commands[0] = random.uniform(-0.25, 0.25)
-         # self.commands[0] = 0.10 
-         self.commands[1] = 0 
+        l = random.uniform(-8.0, 8.0)
+        r = random.uniform(-8.0, 8.0)
+        self.commands[0] = 0.025/2 * (l + r) 
+        self.commands[1] = 0.025/0.14 * (l - r) 
 
     def seed(self, seed=None):
         self.np_random, seed = gym.utils.seeding.np_random(seed)
@@ -142,12 +143,12 @@ class CrawlerEnv(gym.Env):
     def _reward_tracking_lin_vel(self):
         # lin_vel_error = np.square(self.commands[0] - self.crawler.get_state()[7])
         # return np.exp(-lin_vel_error/TRACKING_SIGMA)
-        return 1 - math.fabs(self.commands[0] - self.crawler.get_state()[7]/(self.commands[0] if self.commands[0] else 1))
+        return 1 - math.fabs((self.commands[0] - self.crawler.get_state()[7])/(self.commands[0] if self.commands[0] else 1))
 
     def _reward_tracking_ang_vel(self):
         # ang_vel_error = np.square(self.commands[1] - self.crawler.get_state()[12])
         # return np.exp(-ang_vel_error/TRACKING_SIGMA)
-        return 1 - math.fabs(self.commands[1] - self.crawler.get_state()[12]/(self.commands[1] if self.commands[1] else 1))
+        return 1 - math.fabs((self.commands[1] - self.crawler.get_state()[12])/(self.commands[1] if self.commands[1] else 1))
 
     def _reward_action_rate(self):
         return np.sum(np.square(self.prev_actions - self.actions))

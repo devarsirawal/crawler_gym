@@ -61,7 +61,7 @@ class Plotter:
         a = axs[1,0]
         if log["l_wheel"]: a.plot(time, log["l_wheel"], label="l_wheel")
         if log["r_wheel"]: a.plot(time, log["r_wheel"], label="r_wheel")
-        a.set(xlabel='time [frames]', ylabel=' Angular Velocity [rad/s]', title='Wheel Angular Velocity')
+        a.set(xlabel='time [frames]', ylabel=' Angular Velocity [rad/s]', title='Wheel Actions')
         a.legend()
         # plot left front wheel torque
         a = axs[1,1]

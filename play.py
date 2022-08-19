@@ -33,7 +33,7 @@ for ep in range(episodes):
         if env.step_counter < MAX_PLOT_TIME:
             logger_vars = {
                 'x_pos': env.crawler.get_state()[2],
-                'y_pos': env.crawler.get_state()[0],
+                'y_pos': env.crawler.get_state()[1],
                 'track_lin_vel': env.crawler.get_state()[7],
                 'track_ang_vel': env.crawler.get_state()[12],
                 'cmd_lin_vel': env.commands[0],

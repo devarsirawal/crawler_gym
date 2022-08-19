@@ -49,5 +49,5 @@ class TensorboardCallback(BaseCallback):
         self.command_buffer = []
 
 model = PPO('MlpPolicy', env, verbose=1, tensorboard_log="./ppo_crawler_tensorboard")
-model.learn(total_timesteps=500_000, callback=TensorboardCallback(env))
+model.learn(total_timesteps=1_000_000, callback=TensorboardCallback(env))
 model.save("crawler_ppo")
