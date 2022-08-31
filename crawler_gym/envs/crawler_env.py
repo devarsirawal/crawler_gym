@@ -14,7 +14,7 @@ TRACKING_SIGMA = 0.25
 class CrawlerEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, headless=False):
+    def __init__(self, headless=False, push_robot=True, add_noise=False, add_bias=False, resample_cmd=True, random_orient=True):
         self.step_counter = 0
 
         # actions for left & right front wheel velocities, 
@@ -31,17 +31,24 @@ class CrawlerEnv(gym.Env):
         self.action_buffer = [] 
         self.init_done = True
         self.done = False
-
-
+        self.push_robot = push_robot
+        self.add_noise = add_noise
+        self.add_bias = add_bias
+        self.lin_vel_noise = 0.005
+        self.ang_vel_noise = 0.1
+        self.bias_period = 1./10.
+        self.resample_cmd = resample_cmd
+        self.random_orient = random_orient
 
     def step(self, action):
         self.actions = action
         self.action_buffer.append(list(action) + [self.crawler.get_observations()[7], self.crawler.get_observations()[12]])
         self.crawler.apply_action(self.actions)
         p.stepSimulation()
-
-        if self.step_counter % 250 == 0:
-            self._resample_commands()
+        
+        if self.resample_cmd:
+            if self.step_counter % 250 == 0:
+                self._resample_commands()
 
         self.physics_step()
 
@@ -66,11 +73,21 @@ class CrawlerEnv(gym.Env):
                          forceObj=[0,0,-200], posObj=self.crawler.rw_pos, flags=p.LINK_FRAME, physicsClientId=self.client)
         p.applyExternalForce(objectUniqueId=self.crawler.crawler, linkIndex=-1,
                          forceObj=[0,0,-200], posObj=self.crawler.cw_pos, flags=p.LINK_FRAME, physicsClientId=self.client)
+        if self.push_robot:
+            force_vec = np.array(self.crawler.get_state()[0:3]) - np.array([0,0,5])
+            force_vec = force_vec / np.linalg.norm(force_vec) * 5
+            p.applyExternalForce(objectUniqueId=self.crawler.crawler, linkIndex=-1,
+                                 forceObj=force_vec, posObj=(0,0,0), flags=p.WORLD_FRAME, physicsClientId=self.client)
 
     def compute_observations(self):
-        obs = [] #self.crawler.get_observations()[7:]
-        obs += [self.crawler.get_observations()[7], self.crawler.get_observations()[12]]
-        # obs += self.actions.tolist()
+        obs = [] 
+        lin_vel = self.crawler.get_observations()[7] + \
+                  (np.random.normal(size=1, scale=self.lin_vel_noise)[0] if self.add_noise else 0) + \
+                  (np.sin(self.step_counter * self.bias_period) * self.lin_vel_noise if self.add_bias else 0) 
+        ang_vel = self.crawler.get_observations()[12] + \
+                  (np.random.normal(size=1, scale=self.ang_vel_noise)[0] if self.add_noise else 0) + \
+                  (np.sin(self.step_counter * self.bias_period) * self.ang_vel_noise if self.add_bias else 0) 
+        obs += [lin_vel, ang_vel]
         obs += self.commands.tolist()
         obs = np.array(obs)
         return obs 
@@ -79,14 +96,19 @@ class CrawlerEnv(gym.Env):
         reward = 0
         reward += self._reward_tracking_lin_vel()
         reward += self._reward_tracking_ang_vel()
-        reward += -1.0 * self._reward_action_rate()
+        reward += -0.5 * self._reward_action_rate()
         return reward
 
+    def set_commands(self, lin_vel, ang_vel):
+        self.commands[0] = lin_vel
+        self.commands[1] = ang_vel
+
     def _resample_commands(self):
+        # TODO: Get rid of magic numbers
         l = random.uniform(-8.0, 8.0)
         r = random.uniform(-8.0, 8.0)
         self.commands[0] = 0.025/2 * (l + r) 
-        self.commands[1] = 0.025/0.14 * (l - r) 
+        self.commands[1] = 0.025/0.14 * (r - l) 
 
     def seed(self, seed=None):
         self.np_random, seed = gym.utils.seeding.np_random(seed)
@@ -103,7 +125,7 @@ class CrawlerEnv(gym.Env):
 
 
         Wall(self.client)
-        self.crawler = Crawler(self.client)
+        self.crawler = Crawler(self.client, self.random_orient)
 
         obs = self.compute_observations() 
 

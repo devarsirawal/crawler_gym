@@ -1,15 +1,18 @@
 import gym
 import crawler_gym
 from stable_baselines3 import PPO
-from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
 import argparse
 import numpy as np
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--headless", help="Run in headless mode", action="store_true", default=False)
+parser.add_argument("--add_noise", help="Add noise to observations", action="store_true", default=False)
+parser.add_argument("--add_bias", help="Add bias to observations", action="store_true", default=False)
+parser.add_argument("--random_orient", help="Start crawler with random heading", action="store_true", default=False)
 args = parser.parse_args()
 # Create the environment
-env = gym.make('Crawler-v0', headless=args.headless)
+env = gym.make('Crawler-v0', headless=args.headless, add_noise=args.add_noise, add_bias=args.add_bias, random_orient=args.random_orient)
 
 env.reset()
 
@@ -48,6 +51,8 @@ class TensorboardCallback(BaseCallback):
         self.ang_vel_buffer = []
         self.command_buffer = []
 
-model = PPO('MlpPolicy', env, verbose=1, tensorboard_log="./ppo_crawler_tensorboard")
-model.learn(total_timesteps=1_000_000, callback=TensorboardCallback(env))
+model = PPO('MlpPolicy', env, use_sde=True, verbose=1, tensorboard_log="./ppo_crawler_tensorboard")
+model.learn(total_timesteps=1_000_000, callback=[TensorboardCallback(env),
+                                                 CheckpointCallback(save_freq=100_000, save_path="./logs/", name_prefix="crawler")
+                                                ])
 model.save("crawler_ppo")

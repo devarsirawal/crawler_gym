@@ -23,6 +23,10 @@ class Plotter:
         for key, value in dict.items():
             self.log_state(key, value)
 
+    def dump_states(self, dict):
+        for key, value in dict.items():
+            self.state_log[key] = list(value)
+
     def reset(self):
         self.state_log.clear()
         self.rew_log.clear()
@@ -74,7 +78,39 @@ class Plotter:
         a.set(xlabel='time [frames]', ylabel='Error', title='Angular Velocity Error')
         a.legend()
         plt.show()
+
+    def plot_eval(self):
+        self.plot_process = Process(target=self._plot_eval)
+        self.plot_process.start()
+
+    def _plot_eval(self):
+        nb_rows = 2
+        nb_cols = 1
+        fig, axs = plt.subplots(nb_rows, nb_cols)
+        for key, value in self.state_log.items():
+            time = np.linspace(0, len(value)*self.dt, len(value))
+            break
+        log= self.state_log
+        
+        fig.suptitle(f"Velocity Error", fontsize=14)
+        a = axs[0]
+        if log["measured_lin_vel_mean"] and log["measured_lin_vel_std"] and log["target_lin_vel"]: 
+            a.errorbar(log["target_lin_vel"], log["measured_lin_vel_mean"], yerr=log["measured_lin_vel_std"], fmt="o", color="blue", label="measured")
+            a.plot(log["target_lin_vel"], log["target_lin_vel"], color="orange", label="target")
+        a.set(xlabel='Target Linear Velocity', ylabel='Measured Linear Velocity')
+        a.legend()
+        a = axs[1]
+        if log["measured_ang_vel_mean"] and log["measured_ang_vel_std"] and log["target_ang_vel"]: 
+            a.errorbar(log["target_ang_vel"], log["measured_ang_vel_mean"], yerr=log["measured_ang_vel_std"], fmt="o", color="blue", label="measured")
+            a.plot(log["target_ang_vel"], log["target_ang_vel"], color="orange", label="target")
+        a.set(xlabel='Target Angular Velocity', ylabel='Measured Angular Velocity')
+        a.legend()
+        plt.savefig('fig.png')
+        plt.show()
+
     
     def __del__(self):
         if self.plot_process is not None:
             self.plot_process.kill()
+
+

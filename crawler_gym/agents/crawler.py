@@ -2,21 +2,21 @@ import pybullet as p
 import os
 from math import pi
 import math
-from crawler_gym.utils import inverse_rotation
+import random
+from crawler_gym.utils import inverse_rotation, quaternion_multiply
 
 class Crawler:
-    def __init__(self, client):
+    def __init__(self, client, random_orient=True):
         start_pos = [0.01,0,0]
-        start_orient = p.getQuaternionFromEuler([0,-pi/2.,pi])
-        # start_pos = [0,0,0.01]
-        # start_orient = p.getQuaternionFromEuler([0,0,0])
+        heading = random.uniform(-pi/2, pi) if random_orient else 0  
+        start_orient = quaternion_multiply(p.getQuaternionFromEuler([0,-pi/2.,pi]), p.getQuaternionFromEuler([0, 0, heading]))
         
         f_name = os.path.join(os.path.dirname(__file__), "resources/crawler/crawler_caster.urdf")
         self.crawler = p.loadURDF(f_name, 
                                   start_pos,
                                   start_orient,
                                   physicsClientId=client)
-        self.action_scale = 8 
+        self.action_scale = 12 
         self.lw_pos = p.getJointInfo(self.crawler, 1)[14]
         self.rw_pos = p.getJointInfo(self.crawler, 2)[14]
         self.cw_pos = p.getJointInfo(self.crawler, 4)[14]
@@ -33,7 +33,6 @@ class Crawler:
 
     def get_observations(self):
         obs = self.get_state() 
-        # print("X VEL: ", obs[7]) 
         return obs
     
     def get_state(self):
