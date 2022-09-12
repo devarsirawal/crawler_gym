@@ -25,17 +25,17 @@ model = PPO.load("crawler_ppo", env=env)
 plot_params = {}
 plotter = Plotter(1, plot_params)
 
-lin_vels = set()
-ang_vels = set()
-for l in range(-8,9):
-    for r in range(-8,9):
-        lin_vels.add(0.025/2 * (l + r))
-        ang_vels.add(0.025/0.14 * (r - l))
+# lin_vels = set()
+# ang_vels = set()
+# for l in range(-8,9):
+#     for r in range(-8,9):
+#         lin_vels.add(0.025/2 * (l + r))
+#         ang_vels.add(0.025/0.14 * (r - l))
 
 mean_lin_vels = defaultdict(list)
 mean_ang_vels = defaultdict(list)
-for lin_vel in lin_vels:
-    for ang_vel in ang_vels:
+for lin_vel in np.arange(-0.2, 0.24, 0.08):
+    for ang_vel in np.arange(-1.0, 1.0, 0.4):
         print(f"V: {lin_vel}, W: {ang_vel}")
         measured_lin_vels = []
         measured_ang_vels = []

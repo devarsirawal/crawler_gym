@@ -105,10 +105,8 @@ class CrawlerEnv(gym.Env):
 
     def _resample_commands(self):
         # TODO: Get rid of magic numbers
-        l = random.uniform(-8.0, 8.0)
-        r = random.uniform(-8.0, 8.0)
-        self.commands[0] = 0.025/2 * (l + r) 
-        self.commands[1] = 0.025/0.14 * (r - l) 
+        self.commands[0] = random.uniform(-0.2, 0.2) 
+        self.commands[1] = random.uniform(-1.0, 1.0) 
 
     def seed(self, seed=None):
         self.np_random, seed = gym.utils.seeding.np_random(seed)

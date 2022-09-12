@@ -2,6 +2,9 @@ import gym
 import crawler_gym
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
+from stable_baselines3.common.vec_env import SubprocVecEnv
+from stable_baselines3.common.utils import set_random_seed
+from stable_baselines3.common.evaluation import evaluate_policy
 import torch as th
 import argparse
 import numpy as np
@@ -12,10 +15,15 @@ parser.add_argument("--add_noise", help="Add noise to observations", action="sto
 parser.add_argument("--add_bias", help="Add bias to observations", action="store_true", default=False)
 parser.add_argument("--random_orient", help="Start crawler with random heading", action="store_true", default=False)
 args = parser.parse_args()
-# Create the environment
-env = gym.make('Crawler-v0', headless=args.headless, add_noise=args.add_noise, add_bias=args.add_bias, random_orient=args.random_orient)
 
-env.reset()
+def make_env(env_id, rank, seed=0):
+    def _init():
+        env = gym.make(env_id, headless=True, add_noise=args.add_noise, add_bias=args.add_bias, random_orient=args.random_orient)
+        env.seed(seed+rank)
+        env.reset()
+        return env
+    set_random_seed(seed)
+    return _init
 
 class TensorboardCallback(BaseCallback):
     """
@@ -52,11 +60,20 @@ class TensorboardCallback(BaseCallback):
         self.ang_vel_buffer = []
         self.command_buffer = []
 
-# policy_kwargs = dict(activation_fn=th.nn.ReLU, net_arch=[dict(pi=[256, 256, 128], vf=[256, 256, 128])], log_std_init=0.1)
-policy_kwargs = dict()
+if __name__ == "__main__":
+    env_id = "Crawler-v0" 
+    num_cpu = 16 
+    env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
 
-model = PPO('MlpPolicy', env, use_sde=False, verbose=1, tensorboard_log="./ppo_crawler_tensorboard")
-model.learn(total_timesteps=1_000_000, callback=[TensorboardCallback(env),
-                                                 CheckpointCallback(save_freq=100_000, save_path="./logs/", name_prefix="crawler")
-                                                ])
-model.save("crawler_ppo")
+    # policy_kwargs = dict(activation_fn=th.nn.ReLU, net_arch=[dict(pi=[256, 256, 128], vf=[256, 256, 128])], log_std_init=0.1)
+    policy_kwargs = dict() 
+    model = PPO('MlpPolicy', env, use_sde=False, policy_kwargs=policy_kwargs, verbose=1, tensorboard_log="./ppo_crawler_tensorboard")
+    model.learn(total_timesteps=1_000_000) # , callback=[TensorboardCallback(env),
+                                           #         CheckpointCallback(save_freq=100_000, save_path="./logs/", name_prefix="crawler")
+                                           #        ])
+    model.save("crawler_ppo")
+
+    eval_env = gym.make(env_id, headless=True, add_noise=args.add_noise, add_bias=args.add_bias, random_orient=args.random_orient)
+    reward, _ = evaluate_policy(model, eval_env, n_eval_episodes=20) 
+
+    print(f"Evalution Reward: {reward}")
